@@ -69,8 +69,10 @@ class SnsPublishError(HandlerBaseError):
 def _check_slack_channel_exists(token: str, channel: str) -> None:
     '''Check given Slack channel exists'''
     r = SLACK.api_call(
-        "channels.list",
-        token=token,
+        "conversations.list",
+        limit=1000,
+        exclude_archived=True,
+        types="public_channel,private_channel"
     )
     _logger.debug('Slack response: {}'.format(json.dumps(r)))
 
@@ -92,7 +94,7 @@ def _check_slack_channel_exists(token: str, channel: str) -> None:
 
 def _get_message_from_event(event: dict) -> dict:
     '''Get the message from the event'''
-    return json.loads(event.get('Records')[0].get('Sns').get('Message'))
+    return {"text": str(event.get('Records')[0].get('Sns').get('Message'))}
 
 
 @retry(wait=wait_exponential(), stop=stop_after_delay(15))
@@ -100,14 +102,13 @@ def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
     '''Publish message to Slack'''
     message['channel'] = channel
     _logger.debug('Slack message: {}'.format(json.dumps(message)))
-    # XXX: Don't log the token in the debug call.
-    message['token'] = token
 
     r = SLACK.api_call(
-        "chat.postMessage",
+        'chat.postMessage',
         **message
     )
-    _logger.debug('Slack response: {}'.format(json.dumps(r)))
+
+    _logger.debug('Slack response: {}'.format(r))
 
     if r.get('ok') is not True:
         raise SlackPublishError(r)

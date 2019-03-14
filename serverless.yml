@@ -37,6 +37,8 @@ provider:
   stackTags:
     x-service: aws-sns-to-slack-publisher
     x-stack: ${self:service}-${self:provider.stage}
+  deploymentBucket:
+    name: bf-serverless-deploys
 
 
 functions:
@@ -93,8 +95,7 @@ resources:
       Type: "AWS::SNS::Subscription"
       Properties:
         TopicArn:
-          Fn::ImportValue:
-            Ref: SnsPublisherTopicExport
+          Ref: SnsPublisherTopicExport
         Protocol: lambda
         Endpoint:
           Fn::GetAtt:
@@ -110,8 +111,7 @@ resources:
           Ref: SlackPublishLambdaFunction
         Principal: 'sns.amazonaws.com'
         SourceArn:
-          Fn::ImportValue:
-            Ref: SnsPublisherTopicExport
+          Ref: SnsPublisherTopicExport
 
 
     SlackResponseSnsTopic:
